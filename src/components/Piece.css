@@ -1,0 +1,9 @@
+.piece {
+    width: 90%;
+    height: 90%;
+}
+
+.piece img {
+    max-width: 100%;
+    max-height: 100%;
+}

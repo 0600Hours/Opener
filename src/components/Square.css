@@ -1,0 +1,13 @@
+.square {
+    width: 12.5%;
+    height: 12.5%;
+    display: inline-block;
+}
+
+.square:nth-child(2n) {
+    background-color: green;
+}
+
+.square:nth-child(2n-1) {
+    background-color: lightgray;
+}

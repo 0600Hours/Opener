@@ -3,10 +3,19 @@ import './Board.css'
 
 function Board() {
   const BOARD_SIZE = 8;
-  const squares = new Array(BOARD_SIZE * BOARD_SIZE).fill(<Square />);
+  const squares =
+    new Array(BOARD_SIZE).fill(
+      new Array(BOARD_SIZE).fill(<Square />)
+    );
   return (
     <div className='board'>
-        {squares}
+        {squares.map(row => {
+          return (
+            <div className = 'row'>
+              {row}
+            </div>
+          )
+        })}
     </div>
   );
 }

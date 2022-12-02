@@ -1,13 +1,18 @@
 .square {
     width: 12.5%;
-    height: 12.5%;
+    height: 100%;
     display: inline-block;
 }
 
-.square:nth-child(2n) {
-    background-color: green;
+.row { 
+    height: 12.5%;
+    width: 100%;
 }
 
-.square:nth-child(2n-1) {
-    background-color: lightgray;
+.row:nth-child(2n - 1) .square:nth-child(2n), .row:nth-child(2n) .square:nth-child(2n - 1) {
+    background-color: #eeeed2;
+}
+
+.row:nth-child(2n - 1) .square:nth-child(2n-1), .row:nth-child(2n) .square:nth-child(2n) {
+    background-color: #769656;
 }

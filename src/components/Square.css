@@ -20,5 +20,5 @@
 }
 
 .square.clicked {
-    background:yellow;
+    background:yellow!important;
 }

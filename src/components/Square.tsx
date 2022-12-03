@@ -18,7 +18,7 @@ function Square(props: SquareProps) {
     piece = undefined;
   }
   return (
-    <div className={`square ${props.style ?? ""}`} onClick={props.onClick(props.x, props.y, props.pieceColor, props.pieceType)}>
+    <div className={`square ${props.style ?? ""}`} onClick={() => props.onClick(props.x, props.y, props.pieceColor, props.pieceType)}>
       {piece}
     </div>
   );

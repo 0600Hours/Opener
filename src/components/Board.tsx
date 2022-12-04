@@ -1,10 +1,8 @@
 import Square from './Square';
 import './Board.css'
 import React, { ReactElement, useState } from 'react';
-import { XYToIndex } from '../util/util';
 import { PieceColor, PieceType, SquareInfo } from '../util/types';
-
-export const BOARD_SIZE = 8;
+import { BOARD_SIZE, coordsToIndex, stringToIndex } from '../util/util';
 
 interface BoardProps {
   FEN: string;
@@ -13,8 +11,10 @@ interface BoardProps {
 function Board(props: BoardProps) {
   const [squares, setSquares] = useState(generateSquares(props.FEN));
   const [lastClickedIndex, setLastClickedIndex] = useState(-1);
+  const [activeColor, setActiveColor] = useState(getActiveColor(props.FEN));
+  const [castleRights, setCastleRights] = useState(getCastleRights(props.FEN));
 
-  // generate grid of squares from given index
+  // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
     const squares: SquareInfo[] = [];
 
@@ -41,6 +41,28 @@ function Board(props: BoardProps) {
     return squares;
   }
 
+  // read who has the current move from FEN string
+  function getActiveColor(FEN: string): PieceColor {
+    return FEN.split(' ')[1].toUpperCase() as PieceColor;
+  }
+
+  // read who has the current move from FEN string
+  // format: [WhiteKingside, BlackKingside, WhiteQueenside, BlackQueenside]
+  function getCastleRights(FEN: string): boolean[] {
+    const castleInfo = FEN.split(' ')[1].toUpperCase();
+    return [
+      castleInfo.includes('K'),
+      castleInfo.includes('k'),
+      castleInfo.includes('Q'),
+      castleInfo.includes('q')]
+  }
+
+  // read the possible en passant target square from FEN string
+  function getEnPassantTarget(FEN: string): number {
+    return stringToIndex(FEN.split(' ')[2]);
+  }
+
+
   // handle piece movement
   function onSquareClicked(index: number) {
     const newSquares = [...squares];
@@ -63,14 +85,14 @@ function Board(props: BoardProps) {
 
   return (
     <div className='board'>
-      {[...Array(BOARD_SIZE)].map((e, row) => {
+      {[...Array(BOARD_SIZE)].map((e, rank) => {
         return (
-          <div key={row} className='row'>
-            {squares.slice(row * BOARD_SIZE, BOARD_SIZE + row * BOARD_SIZE).map((square, col) => {
+          <div key={rank} className='row'>
+            {squares.slice(rank * BOARD_SIZE, BOARD_SIZE + rank * BOARD_SIZE).map((square, file) => {
               return (
                 <Square
-                  key={col}
-                  index={XYToIndex(col, row)}
+                  key={file}
+                  index={coordsToIndex(rank, file)}
                   pieceColor={square.pieceColor}
                   pieceType={square.pieceType}
                   style={square.style}

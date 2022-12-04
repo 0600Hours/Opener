@@ -1,53 +1,38 @@
 import Square from './Square';
 import './Board.css'
-import { ReactElement, useState } from 'react';
-import { PieceColor, PieceType } from './Piece';
-import cloneDeep from 'lodash/cloneDeep';
+import React, { ReactElement, useState } from 'react';
+import { XYToIndex } from '../util/util';
+import { PieceColor, PieceType, SquareInfo } from '../util/types';
+
+export const BOARD_SIZE = 8;
 
 interface BoardProps {
   FEN: string;
 }
 
 function Board(props: BoardProps) {
-  const BOARD_SIZE = 8;
   const [squares, setSquares] = useState(generateSquares(props.FEN));
-  const [clickedSquare, setClickedSquare] = useState<ReactElement | undefined>();
+  const [lastClickedIndex, setLastClickedIndex] = useState(-1);
 
   // generate grid of squares from given index
-  function generateSquares(FEN: string): ReactElement[][] {
-    const squares: ReactElement[][] = [[]];
+  function generateSquares(FEN: string): SquareInfo[] {
+    const squares: SquareInfo[] = [];
 
     // assign pieces using FEN
-    let i = 0, y = 0, x = 0;
+    let i = 0
     while (i < FEN.length && FEN.charAt(i) !== ' ') {
       const c = FEN.charAt(i);
-      console.log(c);
       if (c.match(/[1-8]/)) { // blank spaces
         var cNum = parseInt(c);
         while (cNum-- > 0) {
-          squares[y].push(
-            <Square 
-              x={x++}
-              y={y}
-              onClick={onSquareClicked} 
-            />
-        );
+          squares.push({});
         }
-      } else if (c === '/') { // next row
-        squares.push([]);
-        x = 0;
-        y++;
-      } else { // piece
-        const pieceColor: PieceColor = c === c.toUpperCase() ? PieceColor.Black : PieceColor.White;
-        const pieceType: PieceType = c.toUpperCase() as PieceType;
-        squares[y].push(
-          <Square
-            x={x++}
-            y={y}
-            pieceColor={pieceColor}
-            pieceType={pieceType}
-            onClick={onSquareClicked}
-          />
+      } else if (c.match(/[pbnrqk]/i)) { // piece
+        squares.push(
+          {
+            pieceColor: c === c.toUpperCase() ? PieceColor.White : PieceColor.Black,
+            pieceType: c.toUpperCase() as PieceType,
+          }
         );
       }
       i++;
@@ -57,50 +42,45 @@ function Board(props: BoardProps) {
   }
 
   // handle piece movement
-  function onSquareClicked(x: number, y: number, color: PieceColor, type: PieceType) {
-    if (!clickedSquare && color && type) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked
-      const newSquares = cloneDeep(squares);
-      newSquares[y][x] =
-        <Square // style square to be clicked
-          x={x}
-          y={y}
-          pieceColor={color}
-          pieceType={type}
-          onClick={onSquareClicked}
-          style={'clicked'}
-        />
+  function onSquareClicked(index: number) {
+    const newSquares = [...squares];
+    const clickedSquare = newSquares[index];
+    if (lastClickedIndex === -1 && clickedSquare.pieceColor && clickedSquare.pieceType) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked
+      newSquares[index].style = 'clicked';
       setSquares(newSquares);
-      setClickedSquare(newSquares[y][x]);
-    } else if (clickedSquare) { // if we've clicked something else, try to move that square to this one
-      const newSquares = cloneDeep(squares);
-      const prevProps = clickedSquare.props;
-      newSquares[prevProps.y][prevProps.x] =
-        <Square // blank out previously clicked square
-          x={prevProps.x}
-          y={prevProps.y}
-          onClick={onSquareClicked}
-        />
-      newSquares[y][x] =
-        <Square // move piece on previously clicked square to this one
-          x={x}
-          y={y}
-          pieceColor={prevProps.pieceColor}
-          pieceType={prevProps.pieceType}
-          onClick={onSquareClicked}
-        />
-        setSquares(newSquares);
-    } // nothing happens when we click on a square that doesn't have a piece and havent already clicked something
+      setLastClickedIndex(index);
+    } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
+      const prevSquare = newSquares[lastClickedIndex];
+      clickedSquare.pieceColor = prevSquare.pieceColor;
+      clickedSquare.pieceType = prevSquare.pieceType;
+      prevSquare.pieceColor = undefined;
+      prevSquare.pieceType = undefined;
+      prevSquare.style = "";
+      setSquares(newSquares);
+      setLastClickedIndex(-1);
+    } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something
   }
 
   return (
     <div className='board'>
-        {squares.map((row, index) => {
-          return (
-            <div key={BOARD_SIZE - index} className='row'>
-              {row}
-            </div>
-          )
-        })}
+      {[...Array(BOARD_SIZE)].map((e, row) => {
+        return (
+          <div key={row} className='row'>
+            {squares.slice(row * BOARD_SIZE, BOARD_SIZE + row * BOARD_SIZE).map((square, col) => {
+              return (
+                <Square
+                  key={col}
+                  index={XYToIndex(col, row)}
+                  pieceColor={square.pieceColor}
+                  pieceType={square.pieceType}
+                  style={square.style}
+                  onClick={onSquareClicked}
+                />
+              );
+            })}
+          </div>
+        )
+      })};
     </div>
   );
 }

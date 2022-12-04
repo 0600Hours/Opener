@@ -1,9 +1,9 @@
-import Piece, { PieceColor, PieceType } from './Piece';
+import { PieceColor, PieceType } from '../util/types';
+import Piece from './Piece';
 import './Square.css'
 
 interface SquareProps {
-  x: number,
-  y: number,
+  index: number,
   onClick: Function,
   pieceColor?: PieceColor,
   pieceType?: PieceType,
@@ -17,8 +17,9 @@ function Square(props: SquareProps) {
   } else {
     piece = undefined;
   }
+
   return (
-    <div className={`square ${props.style ?? ""}`} onClick={() => props.onClick(props.x, props.y, props.pieceColor, props.pieceType)}>
+    <div className={`square ${props.style ?? ""}`} onClick={() => props.onClick(props.index)}>
       {piece}
     </div>
   );

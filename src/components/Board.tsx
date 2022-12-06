@@ -13,6 +13,7 @@ function Board(props: BoardProps) {
   const [lastClickedIndex, setLastClickedIndex] = useState(-1);
   const [activeColor, setActiveColor] = useState(getActiveColor(props.FEN));
   const [castleRights, setCastleRights] = useState(getCastleRights(props.FEN));
+  const [EnPassantTarget, setEnPassantTarget] = useState(getEnPassantTarget(props.FEN));
 
   // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
@@ -66,22 +67,39 @@ function Board(props: BoardProps) {
 
   // handle piece movement
   function onSquareClicked(index: number) {
-    const newSquares = [...squares];
-    const clickedSquare = newSquares[index];
+    const clickedSquare = squares[index];
     if (lastClickedIndex === -1 && clickedSquare.pieceColor && clickedSquare.pieceType) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked
+      const newSquares = [...squares];
       newSquares[index].style = 'clicked';
       setSquares(newSquares);
       setLastClickedIndex(index);
     } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
-      const prevSquare = newSquares[lastClickedIndex];
-      clickedSquare.pieceColor = prevSquare.pieceColor;
-      clickedSquare.pieceType = prevSquare.pieceType;
-      prevSquare.pieceColor = undefined;
-      prevSquare.pieceType = undefined;
-      prevSquare.style = "";
-      setSquares(newSquares);
+      tryMovePiece(index, lastClickedIndex);
       setLastClickedIndex(-1);
     } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something
+  }
+
+  // attempt to move a piece from start to end
+  function tryMovePiece(startIndex: number, endIndex: number) {
+    const newSquares = [...squares];
+    const start = squares[startIndex], end = squares[endIndex];
+    start.style = ""; // always clear style even if move was invalid
+    if (
+      start.pieceColor !== end.pieceColor // can't capture your own piece
+    ) {
+      switch (start.pieceType) {
+        case PieceType.Pawn:
+          break;
+        default:
+          // ?
+      }
+    }
+
+    setSquares(newSquares);
+  }
+
+  // check if there are any pieces present between 2 squares
+  function isPieceBetweenSquares(squares: SquareInfo[], startIndex: number, endIndex: number) {
   }
 
   return (

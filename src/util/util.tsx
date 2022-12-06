@@ -24,13 +24,26 @@ export function indexToCoords(index: number): [number, number] {
   return [mod, index - mod];
 }
 
-// convert array index to rank/file string
+// convert array index to rank/file coordinates
 export function indexToString(index: number): string {
   const [rank, fileIndex] = indexToCoords(index);
-  return `${String.fromCharCode(LOWERCASE_A_CHAR_CODE + fileIndex)}${rank}`;
+  return `${String.fromCharCode(LOWERCASE_A_CHAR_CODE + fileIndex)}${BOARD_SIZE - rank}`;
 }
 
-// convert rank/file string to array index
+// convert FEN string to array index
 export function stringToIndex(str: string): number {
-  return parseInt(str.charAt(1)) - 1 + (str.toLowerCase().charCodeAt(0) - LOWERCASE_A_CHAR_CODE) * BOARD_SIZE
+  const [rank, file] = stringToCoords(str);
+  return coordsToIndex(rank, file);
+}
+
+// convert FEN string to rank/file coordinates
+export function stringToCoords(str: string): [number, number] {
+  const rank = BOARD_SIZE - parseInt(str.charAt(1));
+  const file = str.charCodeAt(0) - LOWERCASE_A_CHAR_CODE;
+  return [rank, file];
+}
+
+// convert rank/file coordinates to FEN string 
+export function coordsToString(rank: number, file: number) {
+  return indexToString(coordsToIndex(rank, file));
 }

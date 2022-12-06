@@ -2,7 +2,7 @@ import Square from './Square';
 import './Board.css'
 import React, { ReactElement, useState } from 'react';
 import { PieceColor, PieceType, SquareInfo } from '../util/types';
-import { BOARD_SIZE, coordsToIndex, stringToIndex } from '../util/util';
+import { BOARD_SIZE, coordsToIndex, indexToCoords, stringToIndex } from '../util/util';
 
 interface BoardProps {
   FEN: string;
@@ -74,7 +74,7 @@ function Board(props: BoardProps) {
       setSquares(newSquares);
       setLastClickedIndex(index);
     } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
-      tryMovePiece(index, lastClickedIndex);
+      tryMovePiece(lastClickedIndex, index);
       setLastClickedIndex(-1);
     } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something
   }
@@ -84,22 +84,60 @@ function Board(props: BoardProps) {
     const newSquares = [...squares];
     const start = squares[startIndex], end = squares[endIndex];
     start.style = ""; // always clear style even if move was invalid
+
     if (
-      start.pieceColor !== end.pieceColor // can't capture your own piece
+      start.pieceColor !== end.pieceColor // can't capture your own piece. also prevents double clicking a square
+      && !isPieceBetweenSquares(newSquares, startIndex, endIndex) // can't jump over own pieces if moving in cardinatl or diagonal direction
+      && isValidEndpoint(start.pieceType, startIndex, endIndex) //
     ) {
-      switch (start.pieceType) {
-        case PieceType.Pawn:
-          break;
-        default:
-          // ?
-      }
+      // move piece
+      end.pieceColor = start.pieceColor;
+      end.pieceType = start.pieceType;
+      start.pieceColor = undefined;
+      start.pieceType = undefined;
     }
 
     setSquares(newSquares);
   }
 
   // check if there are any pieces present between 2 squares
-  function isPieceBetweenSquares(squares: SquareInfo[], startIndex: number, endIndex: number) {
+  // only checks if attempting to move in a straight line in a cardinal or diagonal direction
+  function isPieceBetweenSquares(squares: SquareInfo[], startIndex: number, endIndex: number): boolean {
+    let [startRank, startFile] = indexToCoords(startIndex);
+    let [endRank, endFile] = indexToCoords(endIndex);
+
+    // only check for pieces that are on the same rank, file, or diagonal
+    if (
+      startRank === endRank
+      || startFile === endFile
+      || startRank + startFile === endRank + endFile
+      || startRank - startFile === endRank - endFile
+    ) {
+      // check intermediate squares for pieces
+      let rankDir = 0, fileDir = 0;
+      if (startRank !== endRank) {
+        rankDir = startRank - endRank < 0 ? 1 : -1;
+      }
+      if (startFile !== endFile) {
+        fileDir = startFile - endFile < 0 ? 1 : -1;
+      }
+      startRank += rankDir;
+      startFile += fileDir;
+      while (startRank !== endRank || startFile !== endFile) {
+        if (squares[coordsToIndex(startRank, startFile)].pieceType) {
+          return true;
+        }
+        startRank += rankDir;
+        startFile += fileDir;
+      }
+    }
+
+    return false;
+  }
+
+  // check if a given piece type could move from the start location to the end location
+  function isValidEndpoint(type: PieceType | undefined, startIndex: number, endIndex: number): boolean {
+    return true; // TODO: actually validate piece direction
   }
 
   return (

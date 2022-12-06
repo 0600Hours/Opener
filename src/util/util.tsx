@@ -21,7 +21,7 @@ export function coordsToIndex(rank: number, file: number): number {
 // convert array index to rank/file coordinates
 export function indexToCoords(index: number): [number, number] {
   const mod = index % BOARD_SIZE;
-  return [mod, index - mod];
+  return [(index - mod) / BOARD_SIZE, mod];
 }
 
 // convert array index to rank/file coordinates

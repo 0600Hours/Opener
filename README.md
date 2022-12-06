@@ -8,11 +8,13 @@ Be able to read in and save a list of chess openings (defined by their moves) an
 
 - Set up chessboard
 
-### To-Do:
-
 - Move pieces
 
-- Validate moves
+- Validate moves (mostly)
+
+### To-Do:
+
+- Minor move validation edge case handling
 
 - Input set of openings
 

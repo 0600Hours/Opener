@@ -74,13 +74,17 @@ function Board(props: BoardProps) {
       setSquares(newSquares);
       setLastClickedIndex(index);
     } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
-      tryMovePiece(lastClickedIndex, index);
+      const wasPieceMoved = tryMovePiece(lastClickedIndex, index);
+      if (wasPieceMoved) { // update active color
+        setActiveColor(activeColor === PieceColor.White ? PieceColor.Black : PieceColor.White);
+      }
       setLastClickedIndex(-1);
     } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something
   }
 
-  // attempt to move a piece from start to end
-  function tryMovePiece(startIndex: number, endIndex: number) {
+  // attempt to move a piece from start to end. returns true if the piece was successfully moved;
+  function tryMovePiece(startIndex: number, endIndex: number): boolean {
+    let wasPieceMoved = false;
     const newSquares = [...squares];
     const start = squares[startIndex], end = squares[endIndex];
     start.style = ""; // always clear style even if move was invalid
@@ -88,6 +92,7 @@ function Board(props: BoardProps) {
     // check if this move is legal TODO: ensure active player is not putting themselves in check
     if (
       start.pieceColor !== end.pieceColor // can't capture your own piece. also prevents double clicking a square
+      && start.pieceColor === activeColor // can only move if it's your turn
       && !isPieceBetweenSquares(newSquares, startIndex, endIndex) // can't jump over own pieces if moving in cardinatl or diagonal direction
       && isValidEndpoint(newSquares, startIndex, endIndex) //
     ) {
@@ -106,9 +111,11 @@ function Board(props: BoardProps) {
         rookStartSquare.pieceType = undefined;
         rookStartSquare.pieceColor = undefined;
       }
+      wasPieceMoved = true;
     }
 
     setSquares(newSquares);
+    return wasPieceMoved;
   }
 
   // check if there are any pieces present between 2 squares

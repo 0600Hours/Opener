@@ -1,6 +1,6 @@
 import Square from './Square';
 import './Board.css'
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
 import { PieceColor, PieceType, SquareInfo } from '../util/types';
 import { BOARD_SIZE, coordsToIndex, indexToCoords, stringToIndex } from '../util/util';
 
@@ -9,11 +9,12 @@ interface BoardProps {
 }
 
 function Board(props: BoardProps) {
-  const [squares, setSquares] = useState(generateSquares(props.FEN));
+  const splitFEN = props.FEN.split(' ');
+  const [squares, setSquares] = useState(generateSquares(splitFEN[0]));
   const [lastClickedIndex, setLastClickedIndex] = useState(-1);
-  const [activeColor, setActiveColor] = useState(getActiveColor(props.FEN));
-  const [castleRights, setCastleRights] = useState(getCastleRights(props.FEN));
-  const [EnPassantTarget, setEnPassantTarget] = useState(getEnPassantTarget(props.FEN));
+  const [activeColor, setActiveColor] = useState(getActiveColor(splitFEN[1]));
+  const [castleRights, setCastleRights] = useState(getCastleRights(splitFEN[2]));
+  const [enPassantTarget, setEnPassantTarget] = useState(getEnPassantTarget(splitFEN[3]));
 
   // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
@@ -44,24 +45,23 @@ function Board(props: BoardProps) {
 
   // read who has the current move from FEN string
   function getActiveColor(FEN: string): PieceColor {
-    return FEN.split(' ')[1].toUpperCase() as PieceColor;
+    return FEN.toUpperCase() as PieceColor;
   }
 
   // read who has the current move from FEN string
   // format: [WhiteKingside, BlackKingside, WhiteQueenside, BlackQueenside]
   function getCastleRights(FEN: string): boolean[] {
-    const castleInfo = FEN.split(' ')[1].toUpperCase();
     return [
-      castleInfo.includes('K'),
-      castleInfo.includes('k'),
-      castleInfo.includes('Q'),
-      castleInfo.includes('q'),
+      FEN.includes('K'),
+      FEN.includes('k'),
+      FEN.includes('Q'),
+      FEN.includes('q'),
     ]
   }
 
   // read the possible en passant target square from FEN string
   function getEnPassantTarget(FEN: string): number {
-    return stringToIndex(FEN.split(' ')[2]);
+    return stringToIndex(FEN);
   }
 
 
@@ -85,16 +85,27 @@ function Board(props: BoardProps) {
     const start = squares[startIndex], end = squares[endIndex];
     start.style = ""; // always clear style even if move was invalid
 
+    // check if this move is legal TODO: ensure active player is not putting themselves in check
     if (
       start.pieceColor !== end.pieceColor // can't capture your own piece. also prevents double clicking a square
       && !isPieceBetweenSquares(newSquares, startIndex, endIndex) // can't jump over own pieces if moving in cardinatl or diagonal direction
-      && isValidEndpoint(start.pieceType, startIndex, endIndex) //
+      && isValidEndpoint(newSquares, startIndex, endIndex) //
     ) {
       // move piece
       end.pieceColor = start.pieceColor;
       end.pieceType = start.pieceType;
       start.pieceColor = undefined;
       start.pieceType = undefined;
+      if (end.pieceType === PieceType.King && Math.abs(startIndex - endIndex) === 2) { // move rook too if we just castled
+        const isKingSide = startIndex < endIndex;
+        const [kingRank, kingFile] = indexToCoords(endIndex);
+        const rookStartSquare = newSquares[coordsToIndex(kingRank, isKingSide ? BOARD_SIZE - 1 : 0)];
+        const rookEndSquare = newSquares[coordsToIndex(kingRank, isKingSide ? kingFile - 1 : kingFile + 1)];
+        rookEndSquare.pieceType = PieceType.Rook;
+        rookEndSquare.pieceColor = rookStartSquare.pieceColor;
+        rookStartSquare.pieceType = undefined;
+        rookStartSquare.pieceColor = undefined;
+      }
     }
 
     setSquares(newSquares);
@@ -136,8 +147,61 @@ function Board(props: BoardProps) {
   }
 
   // check if a given piece type could move from the start location to the end location
-  function isValidEndpoint(type: PieceType | undefined, startIndex: number, endIndex: number): boolean {
-    return true; // TODO: actually validate piece direction
+  function isValidEndpoint(squares: SquareInfo[], startIndex: number, endIndex: number): boolean {
+    const [startRank, startFile] = indexToCoords(startIndex);
+    const [endRank, endFile] = indexToCoords(endIndex);
+    const type = squares[startIndex].pieceType;
+    const color = squares[startIndex].pieceColor;
+    switch (type) {
+      case PieceType.Pawn: // 1 step forward, or 2 steps from initial rank. only captures diagonally 1 step
+        const colorMod = color === PieceColor.White ? 1 : -1; // white pawns go up, black pawns go down
+        return (
+          ( // standard forward movement
+            startFile === endFile
+            && squares[endIndex].pieceType === undefined // pawns can't capture forward
+            && (
+              startRank - endRank === colorMod // 1 step forward
+              || ( // 2 steps forward from the starting rank
+                startRank === (colorMod * ((BOARD_SIZE - 3) / 2)) + (BOARD_SIZE - 1) / 2 // if BOARD_SIZE is 8 this comes out to either 6 or 1
+                && startRank - endRank === 2 * colorMod
+              )
+            )
+          )
+          || ( // diagonal capturing
+            Math.abs(startFile - endFile) === 1
+            && startRank - endRank === colorMod
+            && (
+              (squares[endIndex].pieceColor !== undefined && squares[endIndex].pieceColor !== color) // capturing enemy piece
+              || endIndex === enPassantTarget // en passant
+            )
+          )
+        );
+      case PieceType.Bishop: // only diagonal moves
+        return startRank + startFile === endRank + endFile || startRank - startFile === endRank - endFile;
+      case PieceType.Knight: // 2 steps in 1 direction, then 1 step in another
+        return (Math.abs(startRank - endRank) === 2 && Math.abs(startFile - endFile) === 1)
+          || (Math.abs(startRank - endRank) === 1 && Math.abs(startFile - endFile) === 2)
+      case PieceType.Rook: //only orthogonal moves
+        return startRank === endRank || startFile === endFile
+      case PieceType.Queen: // diagonal or orthogonal moves
+        return startRank === endRank
+          || startFile === endFile
+          || startRank + startFile === endRank + endFile
+          || startRank - startFile === endRank - endFile
+      case PieceType.King: // diagonal or orthogonal, but only 1 step
+        // TODO: check for castling through check, though perhaps not in this function
+        // TODO: ensure nothing is in the way of the rook as well as the king
+        return (
+          (Math.abs(startRank - endRank) <= 1 && Math.abs(startFile - endFile)) <= 1) // basic movement
+          || (
+            startRank === endRank && ( // castling
+              (startFile - endFile === 2 && castleRights[color === PieceColor.White ? 2 : 3]) // queenside castling
+              || (startFile - endFile === -2 && castleRights[color === PieceColor.White ? 0 : 1]) // kingside castling
+            )
+          )
+      default: 
+        return false; // if we've somehow gotten a piece without a type, at least don't try to move it
+    }
   }
 
   return (

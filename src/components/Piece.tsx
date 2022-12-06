@@ -10,7 +10,7 @@ function Piece(props: PieceProps) {
   // piece images are formatted like {piecetype}{piececolor}.png
   return (
     <div className='piece'>
-      <img src={require(`../img/${props.type}${props.color}.png`)} />
+      <img src={require(`../img/${props.type}${props.color}.png`)} alt="" />
     </div>
   );
 }

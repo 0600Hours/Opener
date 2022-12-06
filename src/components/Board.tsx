@@ -68,7 +68,7 @@ function Board(props: BoardProps) {
   // handle piece movement
   function onSquareClicked(index: number) {
     const clickedSquare = squares[index];
-    if (lastClickedIndex === -1 && clickedSquare.pieceColor && clickedSquare.pieceType) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked
+    if (lastClickedIndex === -1 && clickedSquare.pieceColor === activeColor && clickedSquare.pieceType) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked
       const newSquares = [...squares];
       newSquares[index].style = 'clicked';
       setSquares(newSquares);
@@ -94,7 +94,7 @@ function Board(props: BoardProps) {
       start.pieceColor !== end.pieceColor // can't capture your own piece. also prevents double clicking a square
       && start.pieceColor === activeColor // can only move if it's your turn
       && !isPieceBetweenSquares(newSquares, startIndex, endIndex) // can't jump over own pieces if moving in cardinatl or diagonal direction
-      && isValidEndpoint(newSquares, startIndex, endIndex) //
+      && isValidEndpoint(newSquares, startIndex, endIndex) // ensure the piece can actually move like that
     ) {
       // move piece
       end.pieceColor = start.pieceColor;

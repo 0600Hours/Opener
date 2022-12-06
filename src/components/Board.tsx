@@ -54,7 +54,8 @@ function Board(props: BoardProps) {
       castleInfo.includes('K'),
       castleInfo.includes('k'),
       castleInfo.includes('Q'),
-      castleInfo.includes('q')]
+      castleInfo.includes('q'),
+    ]
   }
 
   // read the possible en passant target square from FEN string

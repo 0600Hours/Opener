@@ -66,7 +66,7 @@ function Board(props: BoardProps) {
   }
 
 
-  // handle piece movement
+  // handle piece movement TODO: fix en passant and castling
   function onSquareClicked(index: number) {
     const clickedSquare = squares[index];
     if (lastClickedIndex === -1 && clickedSquare.pieceColor === activeColor && clickedSquare.pieceType) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked
@@ -75,10 +75,47 @@ function Board(props: BoardProps) {
       setSquares(newSquares);
       setLastClickedIndex(index);
     } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
+      const prevSquare = squares[lastClickedIndex];
       const wasPieceMoved = tryMovePiece(lastClickedIndex, index);
       if (wasPieceMoved) { // update active color
+        const [startRank, startFile] = indexToCoords(lastClickedIndex);
+        const [endRank, endFile] = indexToCoords(index);
         setActiveColor(activeColor === PieceColor.White ? PieceColor.Black : PieceColor.White);
-      }
+        // update other board state variables
+        let newEnPassantTarget = -1;
+        switch (prevSquare.pieceType) {
+          case PieceType.King: // king move removes both castle rights
+            const newRights = [...castleRights];
+            newRights[prevSquare.pieceColor === PieceColor.White ? 0 : 1] = false;
+            newRights[prevSquare.pieceColor === PieceColor.White ? 2 : 3] = false;
+            setCastleRights(newRights);
+            break;
+          case PieceType.Rook: // rook move removes just 1
+            if ( // only need to remove the castle rights if we're moving from a corner of the board
+              (startRank === 0 || startRank === BOARD_SIZE - 1)
+              && (startFile === 0 || startRank === BOARD_SIZE - 1)
+            ) {
+              let rightsIndex = -1;
+              if (prevSquare.pieceColor === PieceColor.White && startRank === BOARD_SIZE - 1) { // white rook moving from bottom corner
+                rightsIndex = startFile === 0 ? 2 : 0;
+              } else if (prevSquare.pieceColor === PieceColor.Black && startRank === 0) { // black rook moving from top corner
+                rightsIndex = startFile === 0 ? 3 : 1;
+              }
+              if (rightsIndex !== -1) {
+                const newRights = [...castleRights];
+                newRights[rightsIndex] = false;
+                setCastleRights(newRights)
+              }
+            }
+            break;
+          case PieceType.Pawn: // set en passant target square
+            if (Math.abs(startRank - endRank) === 2) {
+              const targetRank = prevSquare.pieceColor === PieceColor.White ? endRank + 1 : endRank - 1; // target is 1 square behind pawn
+              newEnPassantTarget = coordsToIndex(targetRank, endFile);
+            }
+        }
+        setEnPassantTarget(newEnPassantTarget);
+        }
       setLastClickedIndex(-1);
     } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something
   }
@@ -118,40 +155,6 @@ function Board(props: BoardProps) {
         capturedSquare.pieceType = undefined;
       }
 
-      // update castle rights
-      let newEnPassantTarget = -1;
-      switch (end.pieceType) {
-        case PieceType.King: // king move removes both castle rights
-          const newRights = [...castleRights];
-          newRights[end.pieceColor === PieceColor.White ? 0 : 1] = false;
-          newRights[end.pieceColor === PieceColor.White ? 2 : 3] = false;
-          setCastleRights(newRights);
-          break;
-        case PieceType.Rook: // rook move removes just 1
-          if ( // only need to remove the castle rights if we're moving from a corner of the board
-            (startRank === 0 || startRank === BOARD_SIZE - 1)
-            && (startFile === 0 || startRank === BOARD_SIZE - 1)
-          ) {
-            let rightsIndex = -1;
-            if (end.pieceColor === PieceColor.White && startRank === BOARD_SIZE - 1) { // white rook moving from bottom corner
-              rightsIndex = startFile === 0 ? 2 : 0;
-            } else if (end.pieceColor === PieceColor.Black && startRank === 0) { // black rook moving from top corner
-              rightsIndex = startFile === 0 ? 3 : 1;
-            }
-            if (rightsIndex !== -1) {
-              const newRights = [...castleRights];
-              newRights[rightsIndex] = false;
-              setCastleRights(newRights)
-            }
-          }
-          break;
-        case PieceType.Pawn: // set en passant target square
-          if (Math.abs(startRank - endRank) === 2) {
-            const targetRank = end.pieceColor === PieceColor.White ? endRank + 1 : endRank - 1; // target is 1 square behind pawn
-            newEnPassantTarget = coordsToIndex(targetRank, endFile);
-          }
-      }
-      setEnPassantTarget(newEnPassantTarget);
       wasPieceMoved = true;
     }
 

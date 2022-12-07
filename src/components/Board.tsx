@@ -148,9 +148,10 @@ function Board(props: BoardProps) {
         case PieceType.Pawn: // set en passant target square
           if (Math.abs(startRank - endRank) === 2) {
             const targetRank = end.pieceColor === PieceColor.White ? endRank + 1 : endRank - 1; // target is 1 square behind pawn
-            setEnPassantTarget(coordsToIndex(targetRank, endFile));
+            newEnPassantTarget = coordsToIndex(targetRank, endFile);
           }
       }
+      setEnPassantTarget(newEnPassantTarget);
       wasPieceMoved = true;
     }
 

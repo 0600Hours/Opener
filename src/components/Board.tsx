@@ -6,6 +6,7 @@ import { BOARD_SIZE, coordsToIndex, indexToCoords, stringToIndex } from '../util
 
 interface BoardProps {
   FEN: string;
+  onMove: Function;
 }
 
 function Board(props: BoardProps) {
@@ -66,7 +67,7 @@ function Board(props: BoardProps) {
   }
 
 
-  // handle piece movement TODO: fix en passant and castling
+  // handle piece movement
   function onSquareClicked(index: number) {
     const clickedSquare = squares[index];
     if (lastClickedIndex === -1 && clickedSquare.pieceColor === activeColor && clickedSquare.pieceType) { // if we haven't clicked anything and we clicked something with a piece, mark square a clicked

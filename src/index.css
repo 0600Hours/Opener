@@ -4,6 +4,10 @@ html, body, #root {
   margin: 0;
 }
 
+body {
+  font-family: 'Montserrat';
+}
+
 #root {
   display: flex;
   justify-content: center;

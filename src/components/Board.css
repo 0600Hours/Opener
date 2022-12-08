@@ -7,13 +7,13 @@
 
 @media screen and (orientation:landscape) {
     .board {
-        height: 100vh;
-        width: 100vh;
+        height: 70vh;
+        width: 70vh;
     }
 }
 @media screen and (orientation:portrait) {
     .board {
-        height: 100vw;
-        width: 100vw;
+        height: 70vw;
+        width: 70vw;
     }
 }

@@ -83,11 +83,11 @@ function Board(props: BoardProps) {
         setActiveColor(activeColor === PieceColor.White ? PieceColor.Black : PieceColor.White);
         // update other board state variables
         let newEnPassantTarget = -1;
-        switch (prevSquare.pieceType) {
+        switch (clickedSquare.pieceType) {
           case PieceType.King: // king move removes both castle rights
             const newRights = [...castleRights];
-            newRights[prevSquare.pieceColor === PieceColor.White ? 0 : 1] = false;
-            newRights[prevSquare.pieceColor === PieceColor.White ? 2 : 3] = false;
+            newRights[clickedSquare.pieceColor === PieceColor.White ? 0 : 1] = false;
+            newRights[clickedSquare.pieceColor === PieceColor.White ? 2 : 3] = false;
             setCastleRights(newRights);
             break;
           case PieceType.Rook: // rook move removes just 1
@@ -96,9 +96,9 @@ function Board(props: BoardProps) {
               && (startFile === 0 || startRank === BOARD_SIZE - 1)
             ) {
               let rightsIndex = -1;
-              if (prevSquare.pieceColor === PieceColor.White && startRank === BOARD_SIZE - 1) { // white rook moving from bottom corner
+              if (clickedSquare.pieceColor === PieceColor.White && startRank === BOARD_SIZE - 1) { // white rook moving from bottom corner
                 rightsIndex = startFile === 0 ? 2 : 0;
-              } else if (prevSquare.pieceColor === PieceColor.Black && startRank === 0) { // black rook moving from top corner
+              } else if (clickedSquare.pieceColor === PieceColor.Black && startRank === 0) { // black rook moving from top corner
                 rightsIndex = startFile === 0 ? 3 : 1;
               }
               if (rightsIndex !== -1) {
@@ -110,7 +110,7 @@ function Board(props: BoardProps) {
             break;
           case PieceType.Pawn: // set en passant target square
             if (Math.abs(startRank - endRank) === 2) {
-              const targetRank = prevSquare.pieceColor === PieceColor.White ? endRank + 1 : endRank - 1; // target is 1 square behind pawn
+              const targetRank = clickedSquare.pieceColor === PieceColor.White ? endRank + 1 : endRank - 1; // target is 1 square behind pawn
               newEnPassantTarget = coordsToIndex(targetRank, endFile);
             }
         }

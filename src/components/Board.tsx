@@ -75,7 +75,6 @@ function Board(props: BoardProps) {
       setSquares(newSquares);
       setLastClickedIndex(index);
     } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
-      const prevSquare = squares[lastClickedIndex];
       const wasPieceMoved = tryMovePiece(lastClickedIndex, index);
       if (wasPieceMoved) { // update active color
         const [startRank, startFile] = indexToCoords(lastClickedIndex);
@@ -124,6 +123,8 @@ function Board(props: BoardProps) {
   function tryMovePiece(startIndex: number, endIndex: number): boolean {
     let wasPieceMoved = false;
     const newSquares = [...squares];
+    // startFile isnt getting used anywhere but [startRank,] = ... is worse than just suppressing the linter IMO
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [startRank, startFile] = indexToCoords(startIndex);
     const [endRank, endFile] = indexToCoords(endIndex);
     const start = squares[startIndex], end = squares[endIndex];

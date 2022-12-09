@@ -20,17 +20,6 @@ function Board(props: BoardProps) {
   const [halfMoves, setHalfMoves] = useState(parseInt(splitFEN[4]));
   const [fullMoves, setFullMoves] = useState(parseInt(splitFEN[5]));
 
-  useEffect(() => {
-    const splitFEN = props.FEN.split(' ');
-    setSquares(generateSquares(splitFEN[0]));
-    setLastClickedIndex(-1);
-    setActiveColor(getActiveColor(splitFEN[1]));
-    setCastleRights(getCastleRights(splitFEN[2]));
-    setEnPassantTarget(getEnPassantTarget(splitFEN[3]));
-    setHalfMoves(parseInt(splitFEN[4]));
-    setFullMoves(parseInt(splitFEN[5]));
-  }, [props.FEN])
-
   // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
     const squares: SquareInfo[] = [];
@@ -257,14 +246,14 @@ function Board(props: BoardProps) {
         return startRank + startFile === endRank + endFile || startRank - startFile === endRank - endFile;
       case PieceType.Knight: // 2 steps in 1 direction, then 1 step in another
         return (Math.abs(startRank - endRank) === 2 && Math.abs(startFile - endFile) === 1)
-          || (Math.abs(startRank - endRank) === 1 && Math.abs(startFile - endFile) === 2)
+          || (Math.abs(startRank - endRank) === 1 && Math.abs(startFile - endFile) === 2);
       case PieceType.Rook: //only orthogonal moves
-        return startRank === endRank || startFile === endFile
+        return startRank === endRank || startFile === endFile;
       case PieceType.Queen: // diagonal or orthogonal moves
         return startRank === endRank
           || startFile === endFile
           || startRank + startFile === endRank + endFile
-          || startRank - startFile === endRank - endFile
+          || startRank - startFile === endRank - endFile;
       case PieceType.King: // diagonal or orthogonal, but only 1 step
         // TODO: check for castling through check, though perhaps not in this function
         // TODO: ensure nothing is in the way of the rook as well as the king
@@ -275,7 +264,7 @@ function Board(props: BoardProps) {
               (startFile - endFile === 2 && castleRights[color === PieceColor.White ? 1 : 3]) // queenside castling
               || (startFile - endFile === -2 && castleRights[color === PieceColor.White ? 0 : 2]) // kingside castling
             )
-          )
+          );
       default: 
         return false; // if we've somehow gotten a piece without a type, at least don't try to move it
     }
@@ -317,7 +306,7 @@ function Board(props: BoardProps) {
   }
 
   return (
-    <div className='board' key={props.FEN}>
+    <div className='board'>
       {[...Array(BOARD_SIZE)].map((e, rank) => {
         return (
           <div key={rank} className='row'>

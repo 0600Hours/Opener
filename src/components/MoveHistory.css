@@ -13,26 +13,33 @@
   text-decoration: underline;
 }
 
-.move-history .move-list {
+.move-list {
   width: 100%;
-  color: #CCC;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   overflow-y: auto;
 }
 
-.move-history .move-pair {
+.move-pair {
   margin: 5px;
 }
 
-.move-history .move-pair span {
+.move {
   margin: 0 3px;
 }
 
-.move-history .move-pair span:not(:first-child):hover {
-  color: white;
+.move:hover {
+  color: white!important;
   font-weight: bold;
+}
+
+.move-list .active {
+  color: #DDD;
+}
+
+.move-list .inactive {
+  color: #888;
 }
 
 @media screen and (orientation:portrait) {

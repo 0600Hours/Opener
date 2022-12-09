@@ -13,6 +13,8 @@ export function importAll(context: any) {
   return output;
 }
 
+/* convesion utility functions */
+
 // convert rank/file coordinates to array index
 export function coordsToIndex(rank: number, file: number): number {
   return rank * BOARD_SIZE + file;
@@ -46,4 +48,8 @@ export function stringToCoords(str: string): [number, number] {
 // convert rank/file coordinates to FEN string 
 export function coordsToString(rank: number, file: number) {
   return indexToString(coordsToIndex(rank, file));
+}
+
+export function fileNumberToName(fileNumber: number) {
+  return coordsToString(0, fileNumber).charAt(0);
 }

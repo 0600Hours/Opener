@@ -2,7 +2,7 @@ import Square from './Square';
 import './Board.css'
 import { useState } from 'react';
 import { PieceColor, PieceType, SquareInfo } from '../util/types';
-import { BOARD_SIZE, coordsToIndex, indexToCoords, stringToIndex } from '../util/util';
+import { BOARD_SIZE, coordsToIndex, fileNumberToName, indexToCoords, indexToString, stringToIndex } from '../util/util';
 
 interface BoardProps {
   FEN: string;
@@ -17,6 +17,8 @@ function Board(props: BoardProps) {
   const [activeColor, setActiveColor] = useState(getActiveColor(splitFEN[1]));
   const [castleRights, setCastleRights] = useState(getCastleRights(splitFEN[2]));
   const [enPassantTarget, setEnPassantTarget] = useState(getEnPassantTarget(splitFEN[3]));
+  const [halfMoves, setHalfMoves] = useState(parseInt(splitFEN[4]));
+  const [fullMoves, setFullMoves] = useState(parseInt(splitFEN[5]));
 
   // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
@@ -51,14 +53,14 @@ function Board(props: BoardProps) {
   }
 
   // read who has the current move from FEN string
-  // format: [WhiteKingside, BlackKingside, WhiteQueenside, BlackQueenside]
+  // format: [WhiteKingside, WhiteQueenside, BlackKingside, BlackQueenside]
   function getCastleRights(FEN: string): boolean[] {
     return [
       FEN.includes('K'),
-      FEN.includes('k'),
       FEN.includes('Q'),
+      FEN.includes('k'),
       FEN.includes('q'),
-    ]
+    ];
   }
 
   // read the possible en passant target square from FEN string
@@ -76,11 +78,12 @@ function Board(props: BoardProps) {
       setSquares(newSquares);
       setLastClickedIndex(index);
     } else if (lastClickedIndex !== -1) { // if we've clicked something else, try to move that square to this one
-      const wasPieceMoved = tryMovePiece(lastClickedIndex, index);
-      if (wasPieceMoved) { // update active color
+      const moveName = tryMovePiece(lastClickedIndex, index);
+      if (moveName !== "") {
         const [startRank, startFile] = indexToCoords(lastClickedIndex);
         const [endRank, endFile] = indexToCoords(index);
         setActiveColor(activeColor === PieceColor.White ? PieceColor.Black : PieceColor.White);
+        
         // update other board state variables
         let newEnPassantTarget = -1;
         switch (clickedSquare.pieceType) {
@@ -97,9 +100,9 @@ function Board(props: BoardProps) {
             ) {
               let rightsIndex = -1;
               if (clickedSquare.pieceColor === PieceColor.White && startRank === BOARD_SIZE - 1) { // white rook moving from bottom corner
-                rightsIndex = startFile === 0 ? 2 : 0;
+                rightsIndex = startFile === 0 ? 1 : 0;
               } else if (clickedSquare.pieceColor === PieceColor.Black && startRank === 0) { // black rook moving from top corner
-                rightsIndex = startFile === 0 ? 3 : 1;
+                rightsIndex = startFile === 0 ? 3 : 2;
               }
               if (rightsIndex !== -1) {
                 const newRights = [...castleRights];
@@ -115,17 +118,21 @@ function Board(props: BoardProps) {
             }
         }
         setEnPassantTarget(newEnPassantTarget);
+        setHalfMoves(halfMoves + 1);
+        if (activeColor === PieceColor.White) {
+          setFullMoves(fullMoves + 1);
         }
+        
+        props.onMove(moveName, getFEN())
+      }
       setLastClickedIndex(-1);
     } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something
   }
 
-  // attempt to move a piece from start to end. returns true if the piece was successfully moved;
-  function tryMovePiece(startIndex: number, endIndex: number): boolean {
-    let wasPieceMoved = false;
+  // attempt to move a piece from start to end. returns move name if move was successful
+  function tryMovePiece(startIndex: number, endIndex: number): string {
+    let moveName = "";
     const newSquares = [...squares];
-    // startFile isnt getting used anywhere but [startRank,] = ... is worse than just suppressing the linter IMO
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [startRank, startFile] = indexToCoords(startIndex);
     const [endRank, endFile] = indexToCoords(endIndex);
     const start = squares[startIndex], end = squares[endIndex];
@@ -135,9 +142,16 @@ function Board(props: BoardProps) {
     if (
       start.pieceColor !== end.pieceColor // can't capture your own piece. also prevents double clicking a square
       && start.pieceColor === activeColor // can only move if it's your turn
-      && !isPieceBetweenSquares(newSquares, startIndex, endIndex) // can't jump over own pieces if moving in cardinatl or diagonal direction
+      && !isPieceBetweenSquares(newSquares, startIndex, endIndex) // can't jump over own pieces if moving in cardinal or diagonal direction
       && isValidEndpoint(newSquares, startIndex, endIndex) // ensure the piece can actually move like that
     ) {
+      // generate move name
+      const isCapture = end.pieceType || (start.pieceType === PieceType.Pawn && endIndex === enPassantTarget);
+      moveName = `${start.pieceType !== PieceType.Pawn ? start.pieceType : ""}${isCapture ? 'x' : ""}${indexToString(endIndex).toLowerCase()}`
+      if (start.pieceType === PieceType.Pawn && isCapture) {
+        moveName = `${fileNumberToName(startFile).toLowerCase()}${moveName}`;
+      }
+
       // move piece
       end.pieceColor = start.pieceColor;
       end.pieceType = start.pieceType;
@@ -145,6 +159,7 @@ function Board(props: BoardProps) {
       start.pieceType = undefined;
       if (end.pieceType === PieceType.King && Math.abs(startIndex - endIndex) === 2) { // move rook too if we just castled
         const isKingSide = startIndex < endIndex;
+        moveName = isKingSide ? "O-O" : "O-O-O";
         const rookStartSquare = newSquares[coordsToIndex(endRank, isKingSide ? BOARD_SIZE - 1 : 0)];
         const rookEndSquare = newSquares[coordsToIndex(endRank, isKingSide ? endFile - 1 : endFile + 1)];
         rookEndSquare.pieceType = PieceType.Rook;
@@ -156,12 +171,10 @@ function Board(props: BoardProps) {
         capturedSquare.pieceColor = undefined;
         capturedSquare.pieceType = undefined;
       }
-
-      wasPieceMoved = true;
     }
 
     setSquares(newSquares);
-    return wasPieceMoved;
+    return moveName;
   }
 
   // check if there are any pieces present between 2 squares
@@ -248,13 +261,48 @@ function Board(props: BoardProps) {
           (Math.abs(startRank - endRank) <= 1 && Math.abs(startFile - endFile)) <= 1) // basic movement
           || (
             startRank === endRank && ( // castling
-              (startFile - endFile === 2 && castleRights[color === PieceColor.White ? 2 : 3]) // queenside castling
-              || (startFile - endFile === -2 && castleRights[color === PieceColor.White ? 0 : 1]) // kingside castling
+              (startFile - endFile === 2 && castleRights[color === PieceColor.White ? 1 : 3]) // queenside castling
+              || (startFile - endFile === -2 && castleRights[color === PieceColor.White ? 0 : 2]) // kingside castling
             )
           )
       default: 
         return false; // if we've somehow gotten a piece without a type, at least don't try to move it
     }
+  }
+
+  // get the FEN string for the current board
+  function getFEN(): string {
+    const pieceString = squares
+      .map(sq => {
+        if (!sq.pieceColor || !sq.pieceType) {
+          return "";
+        }
+        return sq.pieceColor === PieceColor.White ? sq.pieceType.toString() : sq.pieceType.toString().toLowerCase();
+      })
+      .reduce((prev, curr, index, arr) => {
+        const slash = index !== arr.length - 1 && (index + 1) % BOARD_SIZE === 0 ? '/' : "";
+        let pieceString = curr;
+        if (curr === "") { // accumulate blank squares together
+          if (index === 0 || Number.isNaN(parseInt(prev.charAt(prev.length - 1)))) {
+            pieceString = "1";
+          } else {
+            // increment last character of string
+            pieceString = `${parseInt(prev.charAt(prev.length - 1)) + 1}`;
+            prev = prev.slice(0, prev.length - 1);
+          }
+        }
+        return `${prev}${pieceString}${slash}`;
+      });
+
+    const activeString = activeColor.toString().toLowerCase();
+
+    let castleString = `${castleRights[0] ? 'K' : ''}${castleRights[1] ? 'Q' : ''}${castleRights[2] ? 'k' : ''}${castleRights[3] ? 'q' : ''}`
+    if (castleString === '') {
+      castleString = '-';
+    }
+    const enPassantString = enPassantTarget === -1 ? '-' : indexToString(enPassantTarget);
+
+    return `${pieceString} ${activeString} ${castleString} ${enPassantString} ${halfMoves} ${fullMoves}`;
   }
 
   return (

@@ -13,12 +13,13 @@ function Board(props: BoardProps) {
   // TODO: actually validate the FEN
   const splitFEN = props.FEN.split(' ');
   const [squares, setSquares] = useState(generateSquares(splitFEN[0]));
-  const [lastClickedIndex, setLastClickedIndex] = useState(-1);
   const [activeColor, setActiveColor] = useState(getActiveColor(splitFEN[1]));
   const [castleRights, setCastleRights] = useState(getCastleRights(splitFEN[2]));
   const [enPassantTarget, setEnPassantTarget] = useState(getEnPassantTarget(splitFEN[3]));
   const [halfMoves, setHalfMoves] = useState(parseInt(splitFEN[4]));
   const [fullMoves, setFullMoves] = useState(parseInt(splitFEN[5]));
+  const [lastClickedIndex, setLastClickedIndex] = useState(-1);
+  const [lastMove, setLastMove] = useState("");
 
   // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
@@ -68,6 +69,11 @@ function Board(props: BoardProps) {
     return FEN === '-' ? -1 : stringToIndex(FEN);
   }
 
+  useEffect(() => {
+    if (lastMove && lastMove !== '') {
+      props.onMove(lastMove, getFEN())
+    }
+  }, [lastMove])
 
   // handle piece movement
   function onSquareClicked(index: number) {
@@ -83,6 +89,7 @@ function Board(props: BoardProps) {
         const [startRank, startFile] = indexToCoords(lastClickedIndex);
         const [endRank, endFile] = indexToCoords(index);
         setActiveColor(activeColor === PieceColor.White ? PieceColor.Black : PieceColor.White);
+        setLastMove(moveName);
         
         // update other board state variables
         let newEnPassantTarget = -1;
@@ -122,8 +129,6 @@ function Board(props: BoardProps) {
         if (activeColor === PieceColor.White) {
           setFullMoves(fullMoves + 1);
         }
-        
-        props.onMove(moveName, getFEN())
       }
       setLastClickedIndex(-1);
     } // nothing happens when we click on a square that doesn't have a piece and haven't already clicked something

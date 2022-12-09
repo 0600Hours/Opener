@@ -1,6 +1,5 @@
 import './MoveHistory.css'
 import _ from 'lodash';
-import { useState } from 'react';
 
 interface MoveHistoryProps {
   moves: string[],

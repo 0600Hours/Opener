@@ -71,7 +71,7 @@ function Board(props: BoardProps) {
 
   useEffect(() => {
     if (lastMove && lastMove !== '') {
-      props.onMove(lastMove, getFEN())
+      props.onMove(lastMove, getFEN());
     }
   }, [lastMove])
 
@@ -152,7 +152,7 @@ function Board(props: BoardProps) {
     ) {
       // generate move name
       const isCapture = end.pieceType || (start.pieceType === PieceType.Pawn && endIndex === enPassantTarget);
-      moveName = `${start.pieceType !== PieceType.Pawn ? start.pieceType : ""}${isCapture ? 'x' : ""}${indexToString(endIndex).toLowerCase()}`
+      moveName = `${start.pieceType !== PieceType.Pawn ? start.pieceType : ""}${isCapture ? 'x' : ""}${indexToString(endIndex).toLowerCase()}`;
       if (start.pieceType === PieceType.Pawn && isCapture) {
         moveName = `${fileNumberToName(startFile).toLowerCase()}${moveName}`;
       }

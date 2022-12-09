@@ -1,7 +1,13 @@
 .app {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  flex-direction: column;
   background: #333;
   width: 100vw;
   height: 100vh;
+}
+
+.board-container {
+  display: flex;
+  justify-content: center;
 }

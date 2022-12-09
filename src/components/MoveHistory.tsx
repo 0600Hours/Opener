@@ -17,8 +17,8 @@ function MoveHistory(props: MoveHistoryProps) {
           return (
             <div className='move-pair' key={index}>
               <span>{`${index + 1}.`}</span>
-              <span onClick={props.onRewind(index * 2)}>{movePair[0]}</span>
-              <span onClick={props.onRewind(index * 2 + 1)}>{movePair[1] || ""}</span>
+              <span onClick={() => props.onRewind(index * 2)}>{movePair[0]}</span>
+              <span onClick={() => props.onRewind(index * 2 + 1)}>{movePair[1] || ""}</span>
             </div>
           )
         })}

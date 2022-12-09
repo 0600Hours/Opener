@@ -1,6 +1,6 @@
 import Square from './Square';
 import './Board.css'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PieceColor, PieceType, SquareInfo } from '../util/types';
 import { BOARD_SIZE, coordsToIndex, fileNumberToName, indexToCoords, indexToString, stringToIndex } from '../util/util';
 
@@ -19,6 +19,17 @@ function Board(props: BoardProps) {
   const [enPassantTarget, setEnPassantTarget] = useState(getEnPassantTarget(splitFEN[3]));
   const [halfMoves, setHalfMoves] = useState(parseInt(splitFEN[4]));
   const [fullMoves, setFullMoves] = useState(parseInt(splitFEN[5]));
+
+  useEffect(() => {
+    const splitFEN = props.FEN.split(' ');
+    setSquares(generateSquares(splitFEN[0]));
+    setLastClickedIndex(-1);
+    setActiveColor(getActiveColor(splitFEN[1]));
+    setCastleRights(getCastleRights(splitFEN[2]));
+    setEnPassantTarget(getEnPassantTarget(splitFEN[3]));
+    setHalfMoves(parseInt(splitFEN[4]));
+    setFullMoves(parseInt(splitFEN[5]));
+  }, [props.FEN])
 
   // generate grid of squares from FEN string
   function generateSquares(FEN: string): SquareInfo[] {
@@ -306,7 +317,7 @@ function Board(props: BoardProps) {
   }
 
   return (
-    <div className='board'>
+    <div className='board' key={props.FEN}>
       {[...Array(BOARD_SIZE)].map((e, rank) => {
         return (
           <div key={rank} className='row'>

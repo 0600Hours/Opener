@@ -13,8 +13,8 @@ function App() {
   // rewind game state to specified move index
   function onRewind(target: number) {
     setFEN(fenHistory[target]);
-    setMoveHistory(moveHistory.slice(0, target));
-    setFenHistory(fenHistory.slice(0, target));
+    setMoveHistory(moveHistory.slice(0, target + 1));
+    setFenHistory(fenHistory.slice(0, target + 1));
   }
 
   // add a new move to the move history
